@@ -1,0 +1,16 @@
+[
+    {
+      "relation": [
+        "delegate_permission/common.handle_all_urls",
+        "delegate_permission/common.get_login_creds"
+      ],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.devweb012.prepaconcour",
+        "sha256_cert_fingerprints": [
+          "C3:42:60:A9:14:DF:EF:53:1D:FB:40:96:D2:2F:0D:1B:C5:01:53:2C:49:60:A5:F3:1A:9C:BE:DC:7D:3B:EE:D1"
+        ]
+      }
+    }
+  ]
+  

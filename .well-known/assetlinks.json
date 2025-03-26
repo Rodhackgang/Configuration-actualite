@@ -1,0 +1,15 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.cursus.actualite",
+      "sha256_cert_fingerprints": [
+        "D3:6E:64:F5:A1:AD:19:B3:05:30:86:DA:1F:3D:A8:0F:03:BF:4E:46:D7:82:16:9F:74:1C:18:F6:DF:B7:D3:92"
+      ]
+    }
+  }
+]
