@@ -34,7 +34,7 @@ const redirectWithPreview = (targetUrl, getTitle, getDescription, getImage, isRe
     if (isRegister) {
       const isMobile = req.headers['user-agent'].includes('Mobile');
       if (isMobile) {
-        res.redirect('https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://play.google.com/store/apps/details%3Fid%3Dcom.devweb012.prepaconcour%26hl%3Dfr_CH%26referrer%3Dutm_source%253Dgoogle%2526utm_medium%253Dorganic%2526utm_term%253Dcursus%2Bapplication%2Bweb%26pcampaignid%3DAPPU_1_AzrIZ77PDqmOxc8PlvbM8Q0&ved=2ahUKEwj-3M-57_KLAxUpR_EDHRY7M94Q5YQBegQIEBAC&usg=AOvVaw33gnJlRGxWJj6JuAGDwR6I');
+        res.redirect('https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://play.google.com/store/apps/details%3Fid%3Dcom.cursus.actualite&ved=2ahUKEwiysaPMhcuNAxWR8LsIHZkdJFgQFnoECB8QAQ&usg=AOvVaw1CNldtn1dz-JUV1nF7kA-u');
         return;
       }
     }
