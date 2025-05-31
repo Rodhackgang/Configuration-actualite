@@ -65,6 +65,9 @@ const redirectWithPreview = (targetUrl, getTitle, getDescription, getImage, isRe
 app.get('/', (req, res) => {
   res.redirect('https://www.cursusbf.com/connexion.html');
 });
+app.get('/index', (req, res) => {
+  res.redirect('https://www.cursusbf.com/openculture.html');
+});
 
 // Routes avec redirection dynamique et code promo
 app.get('/multijoueur', redirectWithPreview(
