@@ -3,89 +3,240 @@ import path from 'path';
 import { URL } from 'url';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8035;
 
 // Obtention du répertoire du fichier en utilisant import.meta.url
-const __dirname = path.dirname(new URL(import.meta.url).pathname); // Remplace __dirname
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
-// Middleware pour servir les fichiers statiques à partir du répertoire public
-app.use(express.static(path.join(__dirname, 'public'))); // Si vous avez des fichiers dans le répertoire public
-
-// Middleware pour servir les fichiers dans .well-known
-// Assurez-vous que le répertoire .well-known existe à la racine du projet
+// Middleware pour servir les fichiers statiques
+app.use(express.static(path.join(__dirname, 'public')));
 app.use('/.well-known', express.static(path.join(__dirname, '.well-known')));
 
-// Middleware avec redirection dynamique et code promo
-const redirectWithPreview = (targetUrl, getTitle, getDescription, getImage, isRegister = false) => {
+const redirectWithPreview = (targetUrl, getTitle, getDescription, getImage) => {
   return (req, res) => {
     const code = req.query.code;
     const title = getTitle(code);
     const description = getDescription(code);
     const image = getImage(code);
-
-    const url = new URL(targetUrl);
-
-    // Si un code est présent, l'ajouter à l'URL de redirection
-    if (code) {
-      url.searchParams.append('code', code);
+    
+    // Construire le deep link de l'app
+    let deepLinkUrl;
+    if (targetUrl.includes('multijoueur')) {
+      deepLinkUrl = `cursus://multijoueur`;
+      if (code) {
+        deepLinkUrl += `?code=${encodeURIComponent(code)}`;
+      }
+    } else if (targetUrl.includes('Register')) {
+      deepLinkUrl = `cursus://Register`;
+      if (code) {
+        deepLinkUrl += `?code=${encodeURIComponent(code)}`;
+      }
+    } else {
+      deepLinkUrl = targetUrl;
     }
-
-    // Si c'est la route d'inscription, rediriger vers le Playstore si l'application n'est pas installée
-    if (isRegister) {
-      const isMobile = req.headers['user-agent'].includes('Mobile');
-      if (isMobile) {
-        res.redirect('https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://play.google.com/store/apps/details%3Fid%3Dcom.cursus.actualite&ved=2ahUKEwiysaPMhcuNAxWR8LsIHZkdJFgQFnoECB8QAQ&usg=AOvVaw1CNldtn1dz-JUV1nF7kA-u');
-        return;
+    
+    // URL Play Store
+    const playStoreUrl = `https://play.google.com/store/apps/details?id=com.cursus.actualite`;
+    
+    // URL de fallback web
+    const webUrl = new URL(targetUrl);
+    if (code) {
+      webUrl.searchParams.append('code', code);
+    }
+    
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>${title}</title>
+  <meta name="description" content="${description}">
+  <meta property="og:title" content="${title}">
+  <meta property="og:description" content="${description}">
+  <meta property="og:image" content="${image}">
+  <meta name="google-play-app" content="app-id=com.devweb012.prepaconcour">
+  
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-width: 400px;
+      text-align: center;
+    }
+    .app-icon {
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 20px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+    }
+    h1 { color: #333; margin: 0 0 10px; font-size: 24px; }
+    p { color: #666; margin: 0 0 30px; line-height: 1.6; }
+    .button {
+      display: inline-block;
+      padding: 15px 30px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      text-decoration: none;
+      border-radius: 30px;
+      font-weight: bold;
+      margin: 5px;
+      transition: transform 0.2s;
+    }
+    .button:hover { transform: scale(1.05); }
+    .button-secondary { background: #f0f0f0; color: #333; }
+    .loading { margin-top: 20px; color: #999; font-size: 14px; }
+    #fallbackButtons { display: none; margin-top: 20px; }
+  </style>
+  
+  <script>
+    const appUrl = '${deepLinkUrl}';
+    const playStoreUrl = '${playStoreUrl}';
+    const webUrl = '${webUrl.toString()}';
+    let appOpened = false;
+    
+    function isMobile() {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+    
+    function isAndroid() {
+      return /Android/i.test(navigator.userAgent);
+    }
+    
+    function showFallbackOptions() {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('fallbackButtons').style.display = 'block';
+    }
+    
+    function tryOpenApp() {
+      if (isMobile()) {
+        // Afficher le message de chargement
+        document.getElementById('loading').style.display = 'block';
+        
+        // Détecter si l'app s'est ouverte
+        const startTime = Date.now();
+        
+        // Tenter d'ouvrir l'application
+        window.location.href = appUrl;
+        
+        // Vérifier si l'utilisateur est revenu (l'app ne s'est pas ouverte)
+        const checkAppOpened = setTimeout(() => {
+          const timeElapsed = Date.now() - startTime;
+          
+          // Si moins de 2 secondes se sont écoulées et le document est toujours visible,
+          // l'app n'est probablement pas installée
+          if (timeElapsed < 2500 && !document.hidden) {
+            if (isAndroid()) {
+              // Rediriger vers le Play Store
+              window.location.href = playStoreUrl;
+            } else {
+              // Pour iOS ou autres, afficher les options
+              showFallbackOptions();
+            }
+          }
+        }, 1500);
+        
+        // Détecter si l'app s'est effectivement ouverte
+        window.addEventListener('blur', () => {
+          clearTimeout(checkAppOpened);
+          appOpened = true;
+        });
+        
+        // Détecter le retour sur la page (pagehide/visibilitychange)
+        document.addEventListener('visibilitychange', () => {
+          if (document.hidden) {
+            clearTimeout(checkAppOpened);
+            appOpened = true;
+          }
+        });
+        
+        // Alternative : utiliser Intent pour Android
+        if (isAndroid() && !appOpened) {
+          setTimeout(() => {
+            if (!appOpened && !document.hidden) {
+              // Utiliser un Intent Android comme alternative
+              const intentUrl = 'intent://' + appUrl.replace('cursus://', '') + 
+                '#Intent;scheme=cursus;package=com.cursus.actualite;' +
+                'S.browser_fallback_url=' + encodeURIComponent(playStoreUrl) + ';end';
+              window.location.href = intentUrl;
+            }
+          }, 1000);
+        }
+      } else {
+        // Sur desktop, rediriger vers le site web
+        window.location.href = webUrl;
       }
     }
-
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <title>${title}</title>
-          <meta name="description" content="${description}">
-          <meta property="og:title" content="${title}">
-          <meta property="og:description" content="${description}">
-          <meta property="og:image" content="${image}">
-          <meta http-equiv="refresh" content="0;url=${url.toString()}">
-        </head>
-        <body>
-          <p>Redirection automatique vers <a href="${url.toString()}">${title}</a>...</p>
-        </body>
-      </html>
-    `;
-
+    
+    // Lancer la tentative d'ouverture au chargement
+    window.addEventListener('load', tryOpenApp);
+  </script>
+</head>
+<body>
+  <div class="container">
+    <div class="app-icon">🎮</div>
+    <h1>${title}</h1>
+    <p>${description}</p>
+    
+    <div id="loading" class="loading" style="display: none;">
+      Ouverture de l'application...
+    </div>
+    
+    <div id="fallbackButtons">
+      <a href="${playStoreUrl}" class="button">
+        📱 Installer l'application
+      </a>
+      <a href="${webUrl.toString()}" class="button button-secondary">
+        🌐 Continuer sur le web
+      </a>
+      <div style="margin-top: 15px; color: #999; font-size: 13px;">
+        Installez l'app pour une meilleure expérience
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
     res.send(html);
   };
 };
 
 // Route de redirection vers la page de connexion
 app.get('/', (req, res) => {
-  res.redirect('https://www.cursusbf.com/connexion.html');
-});
-app.get('/index', (req, res) => {
-  res.redirect('https://www.cursusbf.com/openculture.html');
+  res.redirect('https://www.cursusbf.me/connexion.html');
 });
 
 // Routes avec redirection dynamique et code promo
 app.get('/multijoueur', redirectWithPreview(
-  'https://www.cursusbf.com/multijoueur',
+  'https://www.cursusbf.me/multijoueur',
   (code) => code ? `Mode Multijoueur - ${code}` : 'Mode Multijoueur',
   (code) => code ? `Défiez vos amis avec le code: ${code}` : 'Défiez vos amis et proches dans des défis de révision',
-  (code) => code ? `https://www.cursusbf.com/assets/img/logo.jpg` : 'https://www.cursusbf.com/assets/img/logo.jpg'
+  (code) => 'https://www.cursusbf.me/assets/img/logo.jpg'
 ));
 
 app.get('/Register', redirectWithPreview(
-  'https://www.cursusbf.com/Register',
+  'https://www.cursusbf.me/Register',
   (code) => code ? `Inscription avec PROMO: ${code}` : 'Inscription Cursus',
   (code) => code ? `Créez votre compte avec le code ${code} pour des avantages exclusifs` : 'Créez votre compte pour accéder à toutes les fonctionnalités',
-  (code) => code ? `https://www.cursusbf.com/assets/img/logo.jpg` : 'https://www.cursusbf.com/assets/img/logo.jpg',
-  true // Cette route nécessite la gestion de la redirection Playstore
+  (code) => 'https://www.cursusbf.me/assets/img/logo.jpg'
 ));
 
-// Serveur d'écoute sur le port 3000
+// Serveur d'écoute
 app.listen(PORT, () => {
   console.log(`Serveur démarré sur le port ${PORT}`);
 });
