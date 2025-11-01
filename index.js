@@ -22,12 +22,12 @@ const redirectWithPreview = (targetUrl, getTitle, getDescription, getImage) => {
     // Construire le deep link de l'app
     let deepLinkUrl;
     if (targetUrl.includes('multijoueur')) {
-      deepLinkUrl = `cursus://multijoueur`;
+      deepLinkUrl = `cursusactualite://multijoueur`;
       if (code) {
         deepLinkUrl += `?code=${encodeURIComponent(code)}`;
       }
     } else if (targetUrl.includes('Register')) {
-      deepLinkUrl = `cursus://Register`;
+      deepLinkUrl = `cursusactualite://Register`;
       if (code) {
         deepLinkUrl += `?code=${encodeURIComponent(code)}`;
       }
@@ -54,7 +54,7 @@ const redirectWithPreview = (targetUrl, getTitle, getDescription, getImage) => {
   <meta property="og:title" content="${title}">
   <meta property="og:description" content="${description}">
   <meta property="og:image" content="${image}">
-  <meta name="google-play-app" content="app-id=com.devweb012.prepaconcour">
+  <meta name="google-play-app" content="app-id=com.cursus.actualite">
   
   <style>
     body {
@@ -171,7 +171,7 @@ const redirectWithPreview = (targetUrl, getTitle, getDescription, getImage) => {
           setTimeout(() => {
             if (!appOpened && !document.hidden) {
               // Utiliser un Intent Android comme alternative
-              const intentUrl = 'intent://' + appUrl.replace('cursus://', '') + 
+              const intentUrl = 'intent://' + appUrl.replace('cursusactualite://', '') + 
                 '#Intent;scheme=cursus;package=com.cursus.actualite;' +
                 'S.browser_fallback_url=' + encodeURIComponent(playStoreUrl) + ';end';
               window.location.href = intentUrl;
